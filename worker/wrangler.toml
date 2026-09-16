@@ -1,6 +1,7 @@
 name = "wp-webp-worker"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+usage_model = "unbound"
 
 # AUTH_TOKEN se setea como SECRETO (no en [vars]):
 #   npx wrangler secret put AUTH_TOKEN
