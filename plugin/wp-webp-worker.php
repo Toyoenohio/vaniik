@@ -25,6 +25,7 @@ define( 'WPWEBP_URL', plugin_dir_url( __FILE__ ) );
 require_once WPWEBP_DIR . 'includes/class-wpwebp-settings.php';
 require_once WPWEBP_DIR . 'includes/class-wpwebp-converter.php';
 require_once WPWEBP_DIR . 'includes/class-wpwebp-stats.php';
+require_once WPWEBP_DIR . 'includes/class-wpwebp-updater.php';
 require_once WPWEBP_DIR . 'includes/class-wpwebp-plugin.php';
 
 // Hooks de ciclo de vida registrados en el archivo principal (no dentro de una clase).

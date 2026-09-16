@@ -16,6 +16,9 @@ class WPWebp_Plugin {
 	 * Inicializa el plugin.
 	 */
 	public static function init() {
+		// Auto-update desde GitHub (repo público).
+		new WPWebp_Updater( WPWEBP_FILE );
+
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( 'WPWebp_Settings', 'register' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
