@@ -1,0 +1,22 @@
+.wpwebp-progress {
+	margin-top: 12px;
+}
+
+#wpwebp-bulk-bar {
+	height: 8px;
+	background: #e0e0e0;
+	border-radius: 4px;
+	overflow: hidden;
+	max-width: 400px;
+}
+
+#wpwebp-bulk-fill {
+	height: 100%;
+	width: 0;
+	background: #2271b1;
+	transition: width 0.3s ease;
+}
+
+#wpwebp-bulk-status {
+	margin: 6px 0 0;
+}

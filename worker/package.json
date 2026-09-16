@@ -1,0 +1,24 @@
+{
+  "name": "wp-webp-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Worker de Cloudflare para convertir imágenes a WebP (vía @jsquash WASM). Backend del plugin WordPress de optimización.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@jsquash/jpeg": "^1.6.0",
+    "@jsquash/png": "^3.1.1",
+    "@jsquash/webp": "^1.5.0",
+    "wasm-feature-detect": "^1.9.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.132.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260915.1": true
+  }
+}
