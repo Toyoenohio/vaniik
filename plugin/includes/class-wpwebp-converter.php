@@ -17,12 +17,14 @@ class WPWebp_Converter {
 	const CRON_HOOK  = 'wpwebp_bulk_convert';
 
 	/**
-	 * Convierte un único attachment a WebP (junto al original, como archivo.jpg.webp).
+	 * Convierte un attachment a WebP: el original + todos sus tamaños registrados.
+	 * El carrusel y el srcset cargan los tamaños intermedios, no solo el original.
 	 *
-	 * @param int $attachment_id ID del attachment.
+	 * @param int        $attachment_id ID del attachment.
+	 * @param array|null $metadata      Metadatos (tamaños). Si es null, se leen de la BD.
 	 * @return string 'ok' (convertido o ya existía) | 'skip' (no aplica) | 'error' (falló).
 	 */
-	public static function convert_attachment( $attachment_id ) {
+	public static function convert_attachment( $attachment_id, $metadata = null ) {
 		$attachment_id = absint( $attachment_id );
 		if ( ! $attachment_id ) {
 			return 'skip';
@@ -43,6 +45,61 @@ class WPWebp_Converter {
 			return 'skip';
 		}
 
+		$files = array( $file );
+
+		if ( null === $metadata ) {
+			$metadata = wp_get_attachment_metadata( $attachment_id );
+		}
+
+		if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+			$dir = dirname( $file );
+			foreach ( $metadata['sizes'] as $size ) {
+				if ( ! empty( $size['file'] ) ) {
+					$files[] = trailingslashit( $dir ) . $size['file'];
+				}
+			}
+		}
+
+		$files = array_unique( $files );
+
+		$orig_total = 0;
+		$webp_total = 0;
+		$converted  = false;
+		$result     = 'ok';
+
+		foreach ( $files as $f ) {
+			if ( ! file_exists( $f ) ) {
+				continue;
+			}
+
+			$status = self::convert_file( $f, $mime, $settings );
+
+			if ( 'error' === $status ) {
+				$result = 'error';
+				continue;
+			}
+
+			$orig_total += (int) filesize( $f );
+			$webp_total += (int) filesize( $f . '.webp' );
+			$converted   = true;
+		}
+
+		if ( $converted ) {
+			WPWebp_Stats::log( $attachment_id, $file, $orig_total, $webp_total );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Convierte un único archivo a WebP (archivo.jpg → archivo.jpg.webp).
+	 *
+	 * @param string $file     Ruta absoluta del archivo.
+	 * @param string $mime     MIME del archivo.
+	 * @param array  $settings Ajustes del plugin.
+	 * @return string 'ok' (convertido o ya existía) | 'error'.
+	 */
+	private static function convert_file( $file, $mime, $settings ) {
 		$webp_path = $file . '.webp';
 
 		// Si ya existe, no volvemos a llamar al Worker.
@@ -87,8 +144,6 @@ class WPWebp_Converter {
 		if ( false === $written ) {
 			return 'error';
 		}
-
-		WPWebp_Stats::log( $attachment_id, $file, $webp_path );
 
 		return 'ok';
 	}

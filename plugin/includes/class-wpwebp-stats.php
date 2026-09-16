@@ -52,21 +52,18 @@ class WPWebp_Stats {
 
 	/**
 	 * Registra (o actualiza) el estado de un attachment convertido.
-	 * Upsert: una fila por imagen; al reconvertir se actualiza.
+	 * Upsert: una fila por attachment; los tamaños se suman en el total.
 	 *
 	 * @param int    $attachment_id ID del attachment.
-	 * @param string $file          Ruta del original.
-	 * @param string $webp_path     Ruta del .webp generado.
+	 * @param string $file          Ruta del original (para el nombre mostrado).
+	 * @param int    $original_size Peso total de los originales (original + tamaños).
+	 * @param int    $webp_size     Peso total de los .webp generados.
 	 */
-	public static function log( $attachment_id, $file, $webp_path ) {
+	public static function log( $attachment_id, $file, $original_size, $webp_size ) {
 		global $wpdb;
 
-		if ( ! file_exists( $file ) || ! file_exists( $webp_path ) ) {
-			return;
-		}
-
-		$original_size = (int) filesize( $file );
-		$webp_size     = (int) filesize( $webp_path );
+		$original_size = (int) $original_size;
+		$webp_size     = (int) $webp_size;
 
 		if ( ! $original_size || ! $webp_size ) {
 			return;

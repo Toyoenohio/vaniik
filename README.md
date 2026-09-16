@@ -7,7 +7,7 @@ Conversión de imágenes a **WebP** para WordPress, sin depender de Imagick/GD e
 ```
 vaniik/
 ├── worker/   # Cloudflare Worker: convierte JPEG/PNG/WebP → WebP (via @jsquash WASM)
-└── plugin/   # Plugin de WordPress: on-upload + bulk por cron + .htaccess serving
+└── plugin/   # Plugin de WordPress: on-upload + bulk por cron + servido server-agnóstico
 ```
 
 ### `worker/`
@@ -28,7 +28,15 @@ npx wrangler secret put AUTH_TOKEN   # opcional, para protegerlo
 
 ### `plugin/`
 
-Plugin WordPress (`wp-webp-worker`). Configura endpoint + token en **WebP Worker** (menú admin), convierte al subir y en lote (por WP-Cron, en lotes de 20), y escribe reglas `.htaccess` para servir los `.webp`.
+Plugin WordPress (`wp-webp-worker`). Configura endpoint + token en **WebP Worker** (menú admin), convierte al subir y en lote (por WP-Cron, en lotes de 20), y sirve los `.webp` de forma **server-agnóstica**: reescribe la URL de la imagen a `.webp` en el HTML cuando el navegador lo acepta y el archivo existe (funciona en Apache, Nginx y LiteSpeed). En Apache además escribe reglas `.htaccess` como respaldo para imágenes servidas fuera del HTML.
+
+**Convierte todos los tamaños**: el original + los thumbnails registrados (`-300x`, `-1024x`, etc.), que son los que cargan los carruseles y el `srcset`.
+
+**Auto-update**: el plugin consulta los releases de GitHub (`Toyoenohio/vaniik`) y muestra "actualización disponible" en el admin. Para publicar una versión nueva:
+
+```bash
+GH_TOKEN=<tu_pat> ./release.sh 1.0.2
+```
 
 ## Flujo
 

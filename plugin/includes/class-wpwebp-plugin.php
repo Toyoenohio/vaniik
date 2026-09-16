@@ -19,6 +19,9 @@ class WPWebp_Plugin {
 		// Auto-update desde GitHub (repo público).
 		new WPWebp_Updater( WPWEBP_FILE );
 
+		// Servido server-agnóstico (reescribe URLs a .webp cuando existe).
+		WPWebp_Serve::init();
+
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( 'WPWebp_Settings', 'register' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
@@ -136,7 +139,7 @@ class WPWebp_Plugin {
 	public static function on_upload( $metadata, $attachment_id ) {
 		$settings = WPWebp_Settings::get();
 		if ( ! empty( $settings['on_upload'] ) ) {
-			WPWebp_Converter::convert_attachment( $attachment_id );
+			WPWebp_Converter::convert_attachment( $attachment_id, $metadata );
 		}
 
 		return $metadata;
