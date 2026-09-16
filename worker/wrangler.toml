@@ -3,6 +3,11 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 usage_model = "unbound"
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+persist = true
+
 # AUTH_TOKEN se setea como SECRETO (no en [vars]):
 #   npx wrangler secret put AUTH_TOKEN
 # El plugin de WordPress lo manda como header "Authorization: Bearer <token>".
