@@ -84,7 +84,13 @@ class WPWebp_Converter {
 
 		$written = file_put_contents( $webp_path, $webp ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- archivo binario local, escritura directa intencional.
 
-		return false !== $written;
+		if ( false === $written ) {
+			return false;
+		}
+
+		WPWebp_Stats::log( $attachment_id, $file, $webp_path );
+
+		return true;
 	}
 
 	/**

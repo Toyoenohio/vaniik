@@ -44,6 +44,7 @@ class WPWebp_Plugin {
 			add_option( 'wpwebp_settings', WPWebp_Settings::get_defaults() );
 		}
 
+		WPWebp_Stats::create_table();
 		WPWebp_Converter::ensure_htaccess();
 	}
 
@@ -72,6 +73,15 @@ class WPWebp_Plugin {
 			array( 'WPWebp_Settings', 'render_page' ),
 			'dashicons-format-image',
 			80
+		);
+
+		add_submenu_page(
+			WPWebp_Settings::PAGE_SLUG,
+			__( 'Estadísticas', 'wp-webp-worker' ),
+			__( 'Estadísticas', 'wp-webp-worker' ),
+			'manage_options',
+			'wpwebp-stats',
+			array( 'WPWebp_Stats', 'render_page' )
 		);
 	}
 
