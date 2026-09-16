@@ -59,6 +59,9 @@ class WPWebp_Plugin {
 		wp_clear_scheduled_hook( WPWebp_Converter::CRON_HOOK );
 		delete_option( 'wpwebp_bulk_offset' );
 		delete_option( 'wpwebp_bulk_total' );
+		delete_option( 'wpwebp_bulk_ok' );
+		delete_option( 'wpwebp_bulk_failed' );
+		delete_option( 'wpwebp_bulk_skipped' );
 	}
 
 	/**

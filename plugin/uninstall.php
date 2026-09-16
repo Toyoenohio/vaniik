@@ -14,6 +14,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'wpwebp_settings' );
 delete_option( 'wpwebp_bulk_offset' );
 delete_option( 'wpwebp_bulk_total' );
+delete_option( 'wpwebp_bulk_ok' );
+delete_option( 'wpwebp_bulk_failed' );
+delete_option( 'wpwebp_bulk_skipped' );
 delete_option( 'wpwebp_db_version' );
 
 // Cron de conversión en lote.

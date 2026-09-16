@@ -20,39 +20,39 @@ class WPWebp_Converter {
 	 * Convierte un único attachment a WebP (junto al original, como archivo.jpg.webp).
 	 *
 	 * @param int $attachment_id ID del attachment.
-	 * @return bool True si ya existía o se convirtió correctamente.
+	 * @return string 'ok' (convertido o ya existía) | 'skip' (no aplica) | 'error' (falló).
 	 */
 	public static function convert_attachment( $attachment_id ) {
 		$attachment_id = absint( $attachment_id );
 		if ( ! $attachment_id ) {
-			return false;
+			return 'skip';
 		}
 
 		$mime = get_post_mime_type( $attachment_id );
 		if ( ! in_array( $mime, self::MIME_TYPES, true ) ) {
-			return false;
+			return 'skip';
 		}
 
 		$settings = WPWebp_Settings::get();
 		if ( empty( $settings['endpoint'] ) ) {
-			return false;
+			return 'skip';
 		}
 
 		$file = get_attached_file( $attachment_id );
 		if ( ! $file || ! file_exists( $file ) ) {
-			return false;
+			return 'skip';
 		}
 
 		$webp_path = $file . '.webp';
 
 		// Si ya existe, no volvemos a llamar al Worker.
 		if ( file_exists( $webp_path ) ) {
-			return true;
+			return 'ok';
 		}
 
 		$body = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- archivo binario local, lectura directa intencional.
 		if ( false === $body ) {
-			return false;
+			return 'error';
 		}
 
 		$headers = array( 'Content-Type' => $mime );
@@ -70,27 +70,27 @@ class WPWebp_Converter {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return false;
+			return 'error';
 		}
 
 		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
-			return false;
+			return 'error';
 		}
 
 		$webp = wp_remote_retrieve_body( $response );
 		if ( empty( $webp ) ) {
-			return false;
+			return 'error';
 		}
 
 		$written = file_put_contents( $webp_path, $webp ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- archivo binario local, escritura directa intencional.
 
 		if ( false === $written ) {
-			return false;
+			return 'error';
 		}
 
 		WPWebp_Stats::log( $attachment_id, $file, $webp_path );
 
-		return true;
+		return 'ok';
 	}
 
 	/**
@@ -112,11 +112,14 @@ class WPWebp_Converter {
 	}
 
 	/**
-	 * Inicia el lote: guarda el total y programa la primera pasada.
+	 * Inicia el lote: guarda el total, resetea contadores y programa la primera pasada.
 	 */
 	public static function start_bulk() {
 		delete_option( 'wpwebp_bulk_offset' );
 		update_option( 'wpwebp_bulk_total', self::count_attachments() );
+		update_option( 'wpwebp_bulk_ok', 0 );
+		update_option( 'wpwebp_bulk_failed', 0 );
+		update_option( 'wpwebp_bulk_skipped', 0 );
 
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_single_event( time() + 5, self::CRON_HOOK );
@@ -125,9 +128,13 @@ class WPWebp_Converter {
 
 	/**
 	 * Procesa un lote de BATCH_SIZE attachments y se reprograma si quedan.
+	 * Acumula los contadores ok/failed/skipped entre lotes.
 	 */
 	public static function run_batch() {
-		$offset = (int) get_option( 'wpwebp_bulk_offset', 0 );
+		$offset  = (int) get_option( 'wpwebp_bulk_offset', 0 );
+		$ok      = (int) get_option( 'wpwebp_bulk_ok', 0 );
+		$failed  = (int) get_option( 'wpwebp_bulk_failed', 0 );
+		$skipped = (int) get_option( 'wpwebp_bulk_skipped', 0 );
 
 		$ids = get_posts(
 			array(
@@ -150,25 +157,39 @@ class WPWebp_Converter {
 		}
 
 		foreach ( $ids as $id ) {
-			self::convert_attachment( $id );
+			$status = self::convert_attachment( $id );
+
+			if ( 'ok' === $status ) {
+				$ok++;
+			} elseif ( 'error' === $status ) {
+				$failed++;
+			} else {
+				$skipped++;
+			}
 		}
 
 		update_option( 'wpwebp_bulk_offset', $offset + count( $ids ) );
+		update_option( 'wpwebp_bulk_ok', $ok );
+		update_option( 'wpwebp_bulk_failed', $failed );
+		update_option( 'wpwebp_bulk_skipped', $skipped );
 
 		// Reprogramar el siguiente lote.
 		wp_schedule_single_event( time() + 5, self::CRON_HOOK );
 	}
 
 	/**
-	 * Estado actual del lote (offset/total) para la UI.
+	 * Estado actual del lote (offset/total/contadores) para la UI.
 	 *
 	 * @return array
 	 */
 	public static function bulk_status() {
 		return array(
-			'offset' => (int) get_option( 'wpwebp_bulk_offset', 0 ),
-			'total'  => (int) get_option( 'wpwebp_bulk_total', 0 ),
-			'done'   => ! wp_next_scheduled( self::CRON_HOOK ),
+			'offset'  => (int) get_option( 'wpwebp_bulk_offset', 0 ),
+			'total'   => (int) get_option( 'wpwebp_bulk_total', 0 ),
+			'ok'      => (int) get_option( 'wpwebp_bulk_ok', 0 ),
+			'failed'  => (int) get_option( 'wpwebp_bulk_failed', 0 ),
+			'skipped' => (int) get_option( 'wpwebp_bulk_skipped', 0 ),
+			'done'    => ! wp_next_scheduled( self::CRON_HOOK ),
 		);
 	}
 

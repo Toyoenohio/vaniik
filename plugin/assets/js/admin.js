@@ -42,11 +42,16 @@
 		} );
 	}
 
-	function setProgress( offset, total ) {
-		var pct = total > 0 ? Math.round( ( offset / total ) * 100 ) : 0;
+	function setProgress( d ) {
+		var pct = d.total > 0 ? Math.round( ( d.offset / d.total ) * 100 ) : 0;
 		fill.style.width = pct + '%';
+
 		// textContent es seguro (no interpreta HTML).
-		statusEl.textContent = 'Procesadas ' + offset + ' de ' + total + ' (' + pct + '%)';
+		var msg = 'Procesadas ' + d.offset + ' de ' + d.total + ' (' + pct + '%)';
+		if ( typeof d.ok !== 'undefined' ) {
+			msg += ' — ' + d.ok + ' ok, ' + d.failed + ' fallidas, ' + d.skipped + ' omitidas';
+		}
+		statusEl.textContent = msg;
 	}
 
 	function stopPolling( msg ) {
@@ -68,10 +73,11 @@
 			}
 
 			var d = res.data;
-			setProgress( d.offset, d.total );
+			setProgress( d );
 
 			if ( d.done && d.offset >= d.total ) {
-				stopPolling( 'Conversión completada.' );
+				var finalMsg = 'Conversión completada: ' + d.ok + ' ok, ' + d.failed + ' fallidas, ' + d.skipped + ' omitidas.';
+				stopPolling( finalMsg );
 			} else {
 				pollTimer = setTimeout( poll, 4000 );
 			}
@@ -92,7 +98,7 @@
 					stopPolling( res.data && res.data.message ? res.data.message : 'Error.' );
 					return;
 				}
-				setProgress( res.data.offset, res.data.total );
+				setProgress( res.data );
 				pollTimer = setTimeout( poll, 2000 );
 			} ).catch( function () {
 				stopPolling( 'Error al iniciar la conversión.' );
